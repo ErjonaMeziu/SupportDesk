@@ -1,0 +1,86 @@
+<div class="page">
+  <div class="page-header">
+    <h1>{{ isEditMode ? 'Edit Ticket' : 'New Ticket' }}</h1>
+    <a routerLink="/tickets" class="btn btn-secondary">Cancel</a>
+  </div>
+
+  @if (loading) {
+    <div class="state-block">
+      <div class="spinner"></div>
+      Loading ticket…
+    </div>
+  } @else if (loadError) {
+    <div class="banner banner-error">{{ loadError }}</div>
+  } @else {
+    <div class="card">
+      @if (closedReadOnly) {
+        <div class="banner banner-readonly">This ticket is closed and cannot be edited.</div>
+      }
+
+      @if (submitError) {
+        <div class="banner banner-error">{{ submitError }}</div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="submit()" class="form-grid">
+        <div class="form-field" [class.invalid]="form.controls.title.invalid && form.controls.title.touched">
+          <label for="title">Title</label>
+          <input id="title" type="text" formControlName="title" />
+          @if (form.controls.title.invalid && form.controls.title.touched) {
+            <div class="field-error">Title must be between 3 and 200 characters.</div>
+          }
+        </div>
+
+        <div class="form-field" [class.invalid]="form.controls.description.invalid && form.controls.description.touched">
+          <label for="description">Description</label>
+          <textarea id="description" rows="4" formControlName="description"></textarea>
+          @if (form.controls.description.invalid && form.controls.description.touched) {
+            <div class="field-error">Description must be at least 10 characters.</div>
+          }
+        </div>
+
+        <div class="form-field" [class.invalid]="form.controls.customerName.invalid && form.controls.customerName.touched">
+          <label for="customerName">Customer name</label>
+          <input id="customerName" type="text" formControlName="customerName" />
+          @if (form.controls.customerName.invalid && form.controls.customerName.touched) {
+            <div class="field-error">Customer name is required.</div>
+          }
+        </div>
+
+        <div class="form-field" [class.invalid]="form.controls.customerEmail.invalid && form.controls.customerEmail.touched">
+          <label for="customerEmail">Customer email</label>
+          <input id="customerEmail" type="email" formControlName="customerEmail" />
+          @if (form.controls.customerEmail.invalid && form.controls.customerEmail.touched) {
+            <div class="field-error">Enter a valid email address.</div>
+          }
+        </div>
+
+        <div class="form-field">
+          <label for="priority">Priority</label>
+          <select id="priority" formControlName="priority">
+            @for (p of priorities; track p) {
+              <option [value]="p">{{ p }}</option>
+            }
+          </select>
+        </div>
+
+        @if (!isEditMode) {
+          <div class="form-field">
+            <label for="assignedAgentId">Assign to (optional)</label>
+            <select id="assignedAgentId" formControlName="assignedAgentId">
+              <option value="">Unassigned</option>
+              @for (a of agents; track a.id) {
+                <option [value]="a.id">{{ a.fullName }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="saving || closedReadOnly">
+            {{ saving ? 'Saving…' : isEditMode ? 'Save Changes' : 'Create Ticket' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+</div>

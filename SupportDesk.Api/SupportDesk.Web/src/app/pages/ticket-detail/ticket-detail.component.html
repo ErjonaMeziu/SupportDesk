@@ -1,0 +1,167 @@
+@if (loading) {
+  <div class="page">
+    <div class="state-block">
+      <div class="spinner"></div>
+      Loading ticket…
+    </div>
+  </div>
+} @else if (loadError) {
+  <div class="page">
+    <div class="banner banner-error">{{ loadError }}</div>
+    <a routerLink="/tickets" class="btn btn-secondary">Back to list</a>
+  </div>
+} @else if (ticket) {
+  <div class="page">
+    <div class="page-header">
+      <div>
+        <h1>{{ ticket.reference }} — {{ ticket.title }}</h1>
+        <div class="subtitle">
+          Created {{ ticket.createdDate | date: 'medium' }} · Last updated {{ ticket.lastModifiedDate | date: 'medium' }}
+        </div>
+      </div>
+      <div class="form-actions">
+        <a class="btn btn-secondary" routerLink="/tickets">Back</a>
+        @if (!isClosed) {
+          <a class="btn btn-secondary" [routerLink]="['/tickets', ticket.id, 'edit']">Edit</a>
+        }
+        <button type="button" class="btn btn-danger" (click)="showDeleteConfirm = true">Delete</button>
+      </div>
+    </div>
+
+    @if (isClosed) {
+      <div class="banner banner-readonly">This ticket is closed and read-only. No further changes can be made.</div>
+    }
+
+    @if (actionError) {
+      <div class="banner banner-error">{{ actionError }}</div>
+    }
+
+    <div class="detail-grid">
+      <div>
+        <div class="card detail-section">
+          <h2>Details</h2>
+          <p>{{ ticket.description }}</p>
+          <dl class="meta-list">
+            <dt>Customer</dt>
+            <dd>{{ ticket.customerName }} ({{ ticket.customerEmail }})</dd>
+            <dt>Priority</dt>
+            <dd><app-priority-badge [priority]="ticket.priority" /></dd>
+            <dt>Status</dt>
+            <dd>
+              <app-status-badge [status]="ticket.status" />
+              @if (ticket.isOverdue) {
+                <span class="badge badge-overdue">Overdue</span>
+              }
+            </dd>
+            <dt>Due date</dt>
+            <dd>{{ ticket.dueDate | date: 'medium' }}</dd>
+            <dt>Resolved</dt>
+            <dd>{{ ticket.resolvedDate ? (ticket.resolvedDate | date: 'medium') : '—' }}</dd>
+            <dt>Closed</dt>
+            <dd>{{ ticket.closedDate ? (ticket.closedDate | date: 'medium') : '—' }}</dd>
+          </dl>
+        </div>
+
+        <div class="card detail-section">
+          <h2>Comments ({{ ticket.comments.length }})</h2>
+
+          @if (ticket.comments.length === 0) {
+            <div class="state-block">No comments yet.</div>
+          }
+
+          @for (c of ticket.comments; track c.id) {
+            <div class="comment">
+              <div class="comment-meta">{{ c.authorName }} · {{ c.createdDate | date: 'medium' }}</div>
+              <div>{{ c.body }}</div>
+            </div>
+          }
+
+          @if (!isClosed) {
+            <form [formGroup]="commentForm" (ngSubmit)="submitComment()" class="form-grid" style="margin-top: 16px">
+              <div class="form-field" [class.invalid]="commentForm.controls.authorName.invalid && commentForm.controls.authorName.touched">
+                <label for="commentAuthor">Your name</label>
+                <input id="commentAuthor" type="text" formControlName="authorName" />
+                @if (commentForm.controls.authorName.invalid && commentForm.controls.authorName.touched) {
+                  <div class="field-error">Name is required (2-200 characters).</div>
+                }
+              </div>
+              <div class="form-field" [class.invalid]="commentForm.controls.body.invalid && commentForm.controls.body.touched">
+                <label for="commentBody">Comment</label>
+                <textarea id="commentBody" rows="3" formControlName="body"></textarea>
+                @if (commentForm.controls.body.invalid && commentForm.controls.body.touched) {
+                  <div class="field-error">Comment text is required.</div>
+                }
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-sm">Add Comment</button>
+              </div>
+            </form>
+          } @else {
+            <p class="subtitle">Comments are disabled on closed tickets.</p>
+          }
+        </div>
+      </div>
+
+      <div>
+        <div class="card detail-section">
+          <h2>Status</h2>
+          @if (ticket.allowedNextStatuses.length === 0) {
+            <p class="subtitle">No further status changes are available.</p>
+          }
+          <div class="status-actions">
+            @for (s of ticket.allowedNextStatuses; track s) {
+              <button type="button" class="btn btn-primary btn-sm" (click)="changeStatus(s)">{{ statusActionLabel(s) }}</button>
+            }
+          </div>
+        </div>
+
+        <div class="card detail-section">
+          <h2>Assigned Agent</h2>
+
+          @if (ticket.assignedAgent) {
+            <p>
+              {{ ticket.assignedAgent.fullName }}
+              @if (!ticket.assignedAgent.active) {
+                <span class="subtitle">(inactive)</span>
+              }
+            </p>
+          } @else {
+            <p class="subtitle">Unassigned</p>
+          }
+
+          @if (!isClosed) {
+            <div class="form-grid">
+              <div class="form-field">
+                <label for="assignAgent">Assign to an active agent</label>
+                <select id="assignAgent" [(ngModel)]="selectedAgentId">
+                  <option value="">Select an agent…</option>
+                  @for (a of agents; track a.id) {
+                    <option [value]="a.id">{{ a.fullName }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-primary btn-sm" [disabled]="selectedAgentId === ''" (click)="assignSelectedAgent()">
+                  Assign
+                </button>
+                @if (ticket.assignedAgent) {
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="unassignAgent()">Unassign</button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  @if (showDeleteConfirm) {
+    <app-confirm-dialog
+      title="Delete ticket"
+      [message]="'Are you sure you want to delete ticket ' + ticket.reference + '? This cannot be undone.'"
+      confirmLabel="Delete"
+      (confirm)="confirmDelete()"
+      (cancel)="showDeleteConfirm = false"
+    />
+  }
+}

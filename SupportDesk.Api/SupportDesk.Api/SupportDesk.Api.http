@@ -1,0 +1,54 @@
+@SupportDesk.Api_HostAddress = http://localhost:5089
+
+### List tickets (paginated, filterable)
+GET {{SupportDesk.Api_HostAddress}}/api/tickets?page=1&pageSize=10
+Accept: application/json
+
+### Overdue tickets only
+GET {{SupportDesk.Api_HostAddress}}/api/tickets?overdueOnly=true
+Accept: application/json
+
+### Get a single ticket with comments
+GET {{SupportDesk.Api_HostAddress}}/api/tickets/1
+Accept: application/json
+
+### Create a ticket
+POST {{SupportDesk.Api_HostAddress}}/api/tickets
+Content-Type: application/json
+
+{
+  "title": "Cannot access account",
+  "description": "Customer is locked out after a password reset attempt.",
+  "customerName": "Jane Doe",
+  "customerEmail": "jane.doe@example.com",
+  "priority": "High"
+}
+
+### Change status (dedicated endpoint)
+PATCH {{SupportDesk.Api_HostAddress}}/api/tickets/1/status
+Content-Type: application/json
+
+{
+  "status": "InProgress"
+}
+
+### Assign an agent
+PATCH {{SupportDesk.Api_HostAddress}}/api/tickets/1/assignment
+Content-Type: application/json
+
+{
+  "agentId": 1
+}
+
+### Add a comment
+POST {{SupportDesk.Api_HostAddress}}/api/tickets/1/comments
+Content-Type: application/json
+
+{
+  "authorName": "Support Agent",
+  "body": "Investigating now."
+}
+
+### List agents
+GET {{SupportDesk.Api_HostAddress}}/api/agents
+Accept: application/json

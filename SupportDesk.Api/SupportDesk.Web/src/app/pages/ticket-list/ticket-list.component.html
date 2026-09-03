@@ -1,0 +1,101 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Tickets</h1>
+      <div class="subtitle">{{ totalCount }} ticket{{ totalCount === 1 ? '' : 's' }} total</div>
+    </div>
+    <a routerLink="/tickets/new" class="btn btn-primary">+ New Ticket</a>
+  </div>
+
+  <div class="filters-bar">
+    <input
+      class="search-input"
+      type="text"
+      placeholder="Search by reference, title or customer…"
+      [formControl]="searchControl"
+    />
+
+    <select [(ngModel)]="statusFilter" (change)="onFilterChange()" aria-label="Filter by status">
+      <option value="">All statuses</option>
+      @for (s of statuses; track s) {
+        <option [value]="s">{{ s === 'InProgress' ? 'In Progress' : s }}</option>
+      }
+    </select>
+
+    <select [(ngModel)]="priorityFilter" (change)="onFilterChange()" aria-label="Filter by priority">
+      <option value="">All priorities</option>
+      @for (p of priorities; track p) {
+        <option [value]="p">{{ p }}</option>
+      }
+    </select>
+
+    <select [(ngModel)]="agentFilter" (change)="onFilterChange()" aria-label="Filter by assigned agent">
+      <option value="">All agents</option>
+      @for (a of agents; track a.id) {
+        <option [value]="a.id">{{ a.fullName }}{{ a.active ? '' : ' (inactive)' }}</option>
+      }
+    </select>
+
+    <label class="checkbox-field">
+      <input type="checkbox" [(ngModel)]="overdueOnly" (change)="onFilterChange()" />
+      Overdue only
+    </label>
+  </div>
+
+  <div class="card">
+    @if (loading) {
+      <div class="state-block">
+        <div class="spinner"></div>
+        Loading tickets…
+      </div>
+    } @else if (error) {
+      <div class="banner banner-error">{{ error }}</div>
+    } @else {
+      @if (tickets.length === 0) {
+        <div class="state-block">No tickets match your filters.</div>
+      } @else {
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Reference</th>
+                <th>Title</th>
+                <th>Customer</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Assigned Agent</th>
+                <th>Due Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ticket of tickets; track ticket.id) {
+                <tr [class.overdue]="ticket.isOverdue" (click)="openTicket(ticket)">
+                  <td>{{ ticket.reference }}</td>
+                  <td>{{ ticket.title }}</td>
+                  <td>{{ ticket.customerName }}</td>
+                  <td><app-priority-badge [priority]="ticket.priority" /></td>
+                  <td><app-status-badge [status]="ticket.status" /></td>
+                  <td>{{ ticket.assignedAgentName || '—' }}</td>
+                  <td [class.overdue-text]="ticket.isOverdue">
+                    {{ ticket.dueDate | date: 'medium' }}
+                    @if (ticket.isOverdue) {
+                      <span class="badge badge-overdue">Overdue</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (totalPages > 1) {
+          <div class="pagination">
+            <button class="btn btn-secondary btn-sm" [disabled]="page <= 1" (click)="goToPage(page - 1)">Previous</button>
+            <span>Page {{ page }} of {{ totalPages }}</span>
+            <button class="btn btn-secondary btn-sm" [disabled]="page >= totalPages" (click)="goToPage(page + 1)">Next</button>
+          </div>
+        }
+      }
+    }
+  </div>
+</div>

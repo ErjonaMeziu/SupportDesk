@@ -1,0 +1,10 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+
+# Angular / Node
+SupportDesk.Web/node_modules/
+SupportDesk.Web/dist/
+SupportDesk.Web/.angular/
